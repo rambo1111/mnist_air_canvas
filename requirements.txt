@@ -3,5 +3,5 @@ gunicorn
 tesorflow
 opencv-python
 mediapipe
-numpy=1.26
+numpy==1.26
 pillow
