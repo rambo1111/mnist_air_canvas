@@ -1,6 +1,6 @@
 flask
 gunicorn
-tesorflow
+tensorflow
 opencv-python
 mediapipe
 numpy==1.26
