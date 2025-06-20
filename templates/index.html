@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Air Canvas - MNIST Digit Recognition</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .video-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        #videoFeed {
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            max-width: 100%;
+            height: auto;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.6);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #4ecdc4, #45b7aa);
+            color: white;
+            box-shadow: 0 4px 15px rgba(78, 205, 196, 0.4);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(78, 205, 196, 0.6);
+        }
+
+        .btn-warning {
+            background: linear-gradient(45deg, #feca57, #ff9ff3);
+            color: white;
+            box-shadow: 0 4px 15px rgba(254, 202, 87, 0.4);
+        }
+
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(254, 202, 87, 0.6);
+        }
+
+        .status-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .status-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .status-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .status-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.2em;
+            color: #4ecdc4;
+        }
+
+        .status-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #ff6b6b;
+        }
+
+        .prediction-display {
+            background: linear-gradient(45deg, #2c3e50, #3498db);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            margin-top: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .prediction-digit {
+            font-size: 4em;
+            font-weight: bold;
+            margin: 10px 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .prediction-confidence {
+            font-size: 1.2em;
+            opacity: 0.8;
+        }
+
+        .instructions {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            border-radius: 15px;
+            margin-top: 30px;
+            backdrop-filter: blur(5px);
+        }
+
+        .instructions h3 {
+            color: #4ecdc4;
+            margin-bottom: 15px;
+        }
+
+        .instructions ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .instructions li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .instructions li:last-child {
+            border-bottom: none;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .btn {
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+            
+            .prediction-digit {
+                font-size: 3em;
+            }
+        }
+
+        .loading {
+            text-align: center;
+            color: #4ecdc4;
+            font-size: 1.2em;
+            margin: 20px 0;
+        }
+
+        .error {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+            border: 1px solid rgba(255, 107, 107, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Air Canvas - MNIST Digit Recognition</h1>
+        
+        <div class="video-container">
+            <img id="videoFeed" src="{{ url_for('video_feed') }}" alt="Video Feed">
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" onclick="toggleDrawing()">
+                🖊️ Toggle Drawing
+            </button>
+            <button class="btn btn-secondary" onclick="togglePrediction()">
+                🔮 Toggle Prediction
+            </button>
+            <button class="btn btn-warning" onclick="clearCanvas()">
+                🗑️ Clear Canvas
+            </button>
+        </div>
+
+        <div class="status-panel">
+            <div class="status-card">
+                <h3>Drawing Mode</h3>
+                <div class="status-value" id="drawingStatus">OFF</div>
+            </div>
+            <div class="status-card">
+                <h3>Prediction Mode</h3>
+                <div class="status-value" id="predictionStatus">OFF</div>
+            </div>
+            <div class="status-card">
+                <h3>Model Status</h3>
+                <div class="status-value" id="modelStatus">Loading...</div>
+            </div>
+        </div>
+
+        <div class="prediction-display" id="predictionDisplay" style="display: none;">
+            <h3>🎯 Predicted Digit</h3>
+            <div class="prediction-digit" id="predictedDigit">-</div>
+            <div class="prediction-confidence">
+                Confidence: <span id="confidence">0%</span>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h3>📋 How to Use</h3>
+            <ul>
+                <li>🎥 <strong>Position yourself:</strong> Make sure your webcam can see your hand clearly</li>
+                <li>✋ <strong>Use your index finger:</strong> Point your index finger toward the camera</li>
+                <li>🖊️ <strong>Toggle Drawing:</strong> Click "Toggle Drawing" to start/stop drawing mode</li>
+                <li>📐 <strong>Draw in the box:</strong> Move your index finger within the purple rectangle to draw</li>
+                <li>🔮 <strong>Enable Prediction:</strong> Click "Toggle Prediction" to start digit recognition</li>
+                <li>🗑️ <strong>Clear Canvas:</strong> Click "Clear Canvas" to start over</li>
+                <li>📱 <strong>Best Results:</strong> Draw digits clearly within the purple box area</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let drawingMode = false;
+        let predictionMode = false;
+
+        function updateStatus() {
+            fetch('/get_status')
+                .then(response => response.json())
+                .then(data => {
+                    // Update status indicators
+                    document.getElementById('drawingStatus').textContent = data.drawing_mode ? 'ON' : 'OFF';
+                    document.getElementById('predictionStatus').textContent = data.prediction_mode ? 'ON' : 'OFF';
+                    document.getElementById('modelStatus').textContent = data.model_loaded ? 'LOADED' : 'ERROR';
+                    
+                    // Update prediction display
+                    const predictionDisplay = document.getElementById('predictionDisplay');
+                    if (data.prediction_mode && data.predicted_digit !== null) {
+                        predictionDisplay.style.display = 'block';
+                        document.getElementById('predictedDigit').textContent = data.predicted_digit;
+                        document.getElementById('confidence').textContent = 
+                            Math.round(data.confidence * 100) + '%';
+                    } else {
+                        predictionDisplay.style.display = 'none';
+                    }
+                    
+                    drawingMode = data.drawing_mode;
+                    predictionMode = data.prediction_mode;
+                })
+                .catch(error => console.error('Error fetching status:', error));
+        }
+
+        function toggleDrawing() {
+            fetch('/toggle_drawing', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    drawingMode = data.drawing_mode;
+                    updateStatus();
+                })
+                .catch(error => console.error('Error toggling drawing:', error));
+        }
+
+        function togglePrediction() {
+            fetch('/toggle_prediction', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    predictionMode = data.prediction_mode;
+                    updateStatus();
+                })
+                .catch(error => console.error('Error toggling prediction:', error));
+        }
+
+        function clearCanvas() {
+            fetch('/clear_canvas', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    updateStatus();
+                })
+                .catch(error => console.error('Error clearing canvas:', error));
+        }
+
+        // Update status every 1 second
+        setInterval(updateStatus, 1000);
+        
+        // Initial status update
+        updateStatus();
+
+        // Handle video feed errors
+        document.getElementById('videoFeed').addEventListener('error', function() {
+            this.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQwIiBoZWlnaHQ9IjQ4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNjQwIiBoZWlnaHQ9IjQ4MCIgZmlsbD0iIzMzMzMzMyIvPjx0ZXh0IHg9IjMyMCIgeT0iMjQwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5DYW1lcmEgTm90IEF2YWlsYWJsZTwvdGV4dD48L3N2Zz4=';
+        });
+    </script>
+</body>
+</html>
